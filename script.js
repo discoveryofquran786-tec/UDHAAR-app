@@ -1,45 +1,37 @@
-// Splash Screen Timer
-window.onload = function() {
-  setTimeout(function() {
-    document.getElementById('splash-screen').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-  }, 3000);
-};
+// Groq API Configuration
+const GROQ_API_KEY = "YAHAN_GROQ_KEY_PASTE_KARO"; 
 
-// WhatsApp Notification
-function sendWhatsApp(name, amount) {
-    const phone = prompt("Customer ka WhatsApp number dalo (91 ke saath, e.g. 919876543210):");
-    if(phone) {
-        const msg = `Assalamu Alaikum ${name}, aapka ₹${amount} udhaar balance hai hamare paas. Please jald clear karein. - Khata by Abdul Rahman`;
-        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+async function askAI(userInput) {
+    statusText.innerText = "AI soch raha hai...";
+    
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "llama3-8b-8192",
+                messages: [
+                    { role: "system", content: "You are a helpful khata assistant. Extract name and amount. Return ONLY JSON: {\"name\": \"string\", \"amount\": number}" },
+                    { role: "user", content: userInput }
+                ]
+            })
+        });
+
+        const data = await response.json();
+        const aiText = data.choices[0].message.content;
+        
+        // JSON nikaalne ke liye
+        const result = JSON.parse(aiText.match(/\{.*\}/s)[0]);
+        
+        if (result.amount > 0) {
+            addTransaction(result.name, result.amount);
+            statusText.innerText = `Added: ${result.name} - ₹${result.amount}`;
+        }
+    } catch (error) {
+        console.error(error);
+        statusText.innerText = "Groq API Error!";
     }
 }
-
-// Render List with WhatsApp Button
-function renderList() {
-    let khata = JSON.parse(localStorage.getItem('myKhata')) || [];
-    const listElement = document.getElementById('khata-list');
-    const totalElement = document.getElementById('total-amount');
-    listElement.innerHTML = "";
-    let total = 0;
-    
-    khata.forEach(item => {
-        total += item.amount;
-        const li = document.createElement('li');
-        li.style = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;";
-        li.innerHTML = `
-            <span><b>${item.name}</b>: ₹${item.amount}</span>
-            <div class="actions">
-                <button onclick="sendWhatsApp('${item.name}', ${item.amount})" style="background:#25D366; color:white; border:none; padding:8px; border-radius:5px; margin-right:5px; cursor:pointer;">
-                    <i class="fab fa-whatsapp"></i> Notify
-                </button>
-                <button onclick="deleteTransaction(${item.id})" style="background:#ff4b4b; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">❌</button>
-            </div>
-        `;
-        listElement.appendChild(li);
-    });
-    totalElement.innerText = "₹" + total;
-}
-
-// Initialize
-renderList();
