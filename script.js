@@ -2,7 +2,7 @@
 // 1. API CONFIGURATION (Groq Cloud)
 // Yahan apni 'gsk_...' wali key paste karein
 // ===========================================
-const GROQ_API_KEY = "YAHAN_GROQ_KEY_PASTE_KAREIN"; 
+const GROQ_API_KEY = "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"; 
 
 // ===========================================
 // 2. SPLASH SCREEN & LOAD DATA
