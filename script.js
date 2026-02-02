@@ -1,137 +1,200 @@
-/* --- BASE STYLES --- */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #121212; /* Dark background for phone feel */
-  margin: 0;
-  display: flex;
-  justify-content: center;
-}
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <ctime>
+#include <algorithm>
 
-.app-container {
-  width: 100%;
-  max-width: 420px;
-  background: white;
-  min-height: 100vh;
-  position: relative;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-  padding-bottom: 60px;
-}
+/*
+    PROFESSIONAL KHATA BACKEND
+    --------------------------
+    - Persistent storage (file-based)
+    - Business logic separated cleanly
+    - Inspired by your JavaScript app logic
+*/
 
-/* --- SPLASH SCREEN --- */
-#splash-screen {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background-color: #000;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
+// =======================
+// DATA MODEL
+// =======================
+struct Transaction {
+    long long id;
+    std::string name;
+    int amount;
+    std::string time;
+};
 
-.splash-logo {
-  width: 120px;
-  animation: logoEnter 1.5s ease-out;
-}
+// =======================
+// DATABASE LAYER
+// =======================
+class Database {
+public:
+    static std::vector<Transaction> load() {
+        std::vector<Transaction> data;
+        std::ifstream file("khata.db");
 
-.loader {
-  border: 4px solid #333;
-  border-top: 4px solid #fff;
-  border-radius: 50%;
-  width: 30px; height: 30px;
-  animation: spin 1s linear infinite;
-  margin-top: 20px;
-}
+        std::string line;
+        while (getline(file, line)) {
+            std::stringstream ss(line);
+            Transaction t;
+            std::string temp;
 
-@keyframes logoEnter {
-  0% { transform: scale(0); opacity: 0; }
-  80% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            getline(ss, temp, '|');
+            t.id = std::stoll(temp);
 
-/* --- HEADER --- */
-header {
-  background: black;
-  color: white;
-  padding: 20px;
-  border-bottom-left-radius: 25px;
-  border-bottom-right-radius: 25px;
-}
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-.header-logo { width: 50px; border-radius: 10px; }
-header h1 { margin: 0; font-size: 24px; }
-header p { margin: 0; font-size: 12px; opacity: 0.8; }
+            getline(ss, t.name, '|');
 
-/* --- CARDS & INPUTS --- */
-.balance-card {
-  background: linear-gradient(135deg, #1e1e1e, #3a3a3a);
-  color: white;
-  margin: 20px;
-  padding: 25px;
-  border-radius: 20px;
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
-.balance-card h1 { margin: 10px 0 0; font-size: 40px; }
+            getline(ss, temp, '|');
+            t.amount = std::stoi(temp);
 
-.mic-button {
-  width: 70px; height: 70px;
-  border-radius: 50%;
-  background: #000;
-  color: white;
-  font-size: 24px;
-  border: none;
-  cursor: pointer;
-  display: block;
-  margin: 0 auto;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-  transition: all 0.3s;
-}
-.mic-listening {
-  background: #e74c3c;
-  animation: pulse 1.5s infinite;
-}
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-  70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-}
+            getline(ss, t.time);
 
-#status-text { text-align: center; color: #888; font-size: 14px; margin-top: 10px; }
+            data.push_back(t);
+        }
+        return data;
+    }
 
-.manual-input { display: flex; margin: 20px; gap: 10px; padding: 0 20px; }
-#manual-text { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
-#add-btn { background: black; color: white; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; }
+    static void save(const std::vector<Transaction>& data) {
+        std::ofstream file("khata.db", std::ios::trunc);
+        for (const auto& t : data) {
+            file << t.id << "|"
+                 << t.name << "|"
+                 << t.amount << "|"
+                 << t.time << "\n";
+        }
+    }
+};
 
-/* --- LIST --- */
-.list-section { padding: 0 20px; }
-ul { list-style: none; padding: 0; }
-li {
-  background: #f9f9f9;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-.delete-btn { background: #ffebeb; color: #ff4b4b; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
-.reset-text { background: none; border: none; color: #e74c3c; font-size: 12px; cursor: pointer; }
+// =======================
+// BUSINESS LOGIC (SERVICE)
+// =======================
+class KhataService {
+private:
+    std::vector<Transaction> khata;
 
-/* --- FOOTER --- */
-footer {
-  text-align: center;
-  padding: 20px;
-  color: #aaa;
-  font-size: 13px;
-  background: #f1f1f1;
-  border-top: 1px solid #eee;
-  margin-top: 30px;
+    std::string currentTime() {
+        char buffer[6];
+        std::time_t now = std::time(nullptr);
+        std::tm* ltm = std::localtime(&now);
+        std::strftime(buffer, 6, "%H:%M", ltm);
+        return buffer;
+    }
+
+public:
+    KhataService() {
+        khata = Database::load();
+    }
+
+    void addTransaction(const std::string& name, int amount) {
+        Transaction t;
+        t.id = static_cast<long long>(std::time(nullptr)) * 1000;
+        t.name = name;
+        t.amount = amount;
+        t.time = currentTime();
+
+        khata.push_back(t);
+        Database::save(khata);
+    }
+
+    void deleteTransaction(long long id) {
+        khata.erase(
+            std::remove_if(khata.begin(), khata.end(),
+                [&](const Transaction& t) {
+                    return t.id == id;
+                }),
+            khata.end()
+        );
+        Database::save(khata);
+    }
+
+    void clearAll() {
+        khata.clear();
+        Database::save(khata);
+    }
+
+    int totalAmount() const {
+        int total = 0;
+        for (const auto& t : khata) {
+            total += t.amount;
+        }
+        return total;
+    }
+
+    const std::vector<Transaction>& getAll() const {
+        return khata;
+    }
+};
+
+// =======================
+// API / INTERFACE (CLI)
+// =======================
+int main() {
+    KhataService service;
+    int choice;
+
+    std::cout << "=== KHATA BACKEND SYSTEM ===\n";
+
+    while (true) {
+        std::cout <<
+            "\n1. Add Transaction"
+            "\n2. View All"
+            "\n3. Delete Transaction"
+            "\n4. Total Amount"
+            "\n5. Clear All"
+            "\n0. Exit\n\nChoice: ";
+
+        std::cin >> choice;
+
+        if (choice == 0) break;
+
+        if (choice == 1) {
+            std::string name;
+            int amount;
+            std::cout << "Name: ";
+            std::cin >> name;
+            std::cout << "Amount: ";
+            std::cin >> amount;
+            service.addTransaction(name, amount);
+            std::cout << "Transaction added.\n";
+        }
+
+        else if (choice == 2) {
+            const auto& list = service.getAll();
+            if (list.empty()) {
+                std::cout << "No records found.\n";
+            } else {
+                for (const auto& t : list) {
+                    std::cout
+                        << "ID: " << t.id
+                        << " | Name: " << t.name
+                        << " | ₹" << t.amount
+                        << " | Time: " << t.time << "\n";
+                }
+            }
+        }
+
+        else if (choice == 3) {
+            long long id;
+            std::cout << "Enter ID to delete: ";
+            std::cin >> id;
+            service.deleteTransaction(id);
+            std::cout << "Deleted if ID existed.\n";
+        }
+
+        else if (choice == 4) {
+            std::cout << "Total Amount: ₹" << service.totalAmount() << "\n";
+        }
+
+        else if (choice == 5) {
+            service.clearAll();
+            std::cout << "All records cleared.\n";
+        }
+
+        else {
+            std::cout << "Invalid choice.\n";
+        }
+    }
+
+    std::cout << "Goodbye.\n";
+    return 0;
 }
